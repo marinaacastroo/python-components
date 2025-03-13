@@ -43,7 +43,7 @@ class ConstrainedDeviceApp():
 		
 		logging.info("CDA started.")
 
-	def stopApp(self, code: int):
+	def stopApp(self, code=0):
 		"""
 		Stop the CDA. Calls stopManager() on the device data manager instance.
 		
@@ -73,10 +73,10 @@ def main():
 	cda.startApp()
 	
 	# run for 10 seconds - this can be changed as needed
-	sleep(10)
+	sleep(65)
 	
 	# optionally stop the app - this can be removed if needed
-	cda.stopApp(0)
+	cda.stopApp()
 
 if __name__ == '__main__':
 	"""
