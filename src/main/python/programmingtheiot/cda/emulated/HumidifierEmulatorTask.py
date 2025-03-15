@@ -1,3 +1,4 @@
+
 #####
 # 
 # This class is part of the Programming the Internet of Things project.
@@ -25,38 +26,43 @@ class HumidifierEmulatorTask(BaseActuatorSimTask):
 	"""
 
 	def __init__(self):
-		super( \
-			HumidifierEmulatorTask, self).__init__( \
-				name = ConfigConst.HUMIDIFIER_ACTUATOR_NAME, \
-				typeID = ConfigConst.HUMIDIFIER_ACTUATOR_TYPE, \
-				simpleName = "HUMIDIFIER")
+		super(HumidifierEmulatorTask, self).__init__(
+			name = ConfigConst.HUMIDIFIER_ACTUATOR_NAME,
+			typeID = ConfigConst.HUMIDIFIER_ACTUATOR_TYPE,
+			simpleName = "HUMIDIFIER"
+		)
 
-		enableEmulation = \
-			ConfigUtil().getBoolean( \
-				ConfigConst.CONSTRAINED_DEVICE, ConfigConst.ENABLE_EMULATOR_KEY)
+		enableEmulation = ConfigUtil().getBoolean(
+			ConfigConst.CONSTRAINED_DEVICE,
+			ConfigConst.ENABLE_EMULATOR_KEY
+		)
 
 		self.sh = SenseHAT(emulate = enableEmulation)
+		self._simpleName = self.getSimpleName() if self.getSimpleName() else "UNKNOWN"
 
 	def _activateActuator(self, val: float = ConfigConst.DEFAULT_VAL, stateData: str = None) -> int:
+		if val is None:  # Evita que sea None
+			val = ConfigConst.DEFAULT_VAL
+		
 		if self.sh.screen:
-			msg = self.getSimpleName() + ' ON: ' + str(val) + 'C'
+			msg = f"{self.getSimpleName()} ON: {val}C"
 			self.sh.screen.scroll_text(msg)
 			return 0
 		else:
 			logging.warning("No SenseHAT LED screen instance to write.")
 			return -1
 
+		
 	def _deactivateActuator(self, val: float = ConfigConst.DEFAULT_VAL, stateData: str = None) -> int:
+		name = self.getSimpleName()
+		if name is None:
+			name = "HumidifierEmulatorTask"
+
+		msg = f"{name} OFF"
+		
 		if self.sh.screen:
-			msg = self.getSimpleName() + ' OFF'
 			self.sh.screen.scroll_text(msg)
-
-			# optional sleep (5 seconds) for message to scroll before clearing display
-			sleep(5)
-
-			self.sh.screen.clear()
 			return 0
 		else:
-			logging.warning("No SenseHAT LED screen instance to clear / close.")
+			logging.warning("No SenseHAT LED screen instance to write.")
 			return -1
-		

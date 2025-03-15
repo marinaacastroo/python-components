@@ -39,18 +39,19 @@ enableCrypt    = False
 [ConstrainedDevice]
 deviceLocationID = constraineddevice001
 enableEmulator   = True
-enableSenseHAT   = True
+enableSenseHAT   = False
 enableMqttClient = True
 enableCoapServer = False
 enableCoapClient = False
 enableSystemPerformance = True
-enableSensing    = False
+enableSensing    = True
 enableLogging    = True
+enableSimulator  = True
+enableActuation  = True
 pollCycleSecs    = 5
 testGdaDataPath  = /tmp/gda-data
 testCdaDataPath  = /tmp/cda-data
 testEmptyApp     = False
-
 
 # configurable limits for sensor simulation
 humiditySimFloor   =   35.0
@@ -59,13 +60,6 @@ pressureSimFloor   =  990.0
 pressureSimCeiling = 1010.0
 tempSimFloor       =   15.0
 tempSimCeiling     =   25.0
-
-# configurable limits for humidity sensor
-[Sensor.Humidity]
-typeID        = 1012
-name         = Humidity Sensor
-
-
 
 # configurable limits for actuator triggers
 handleTempChangeOnDevice = True
