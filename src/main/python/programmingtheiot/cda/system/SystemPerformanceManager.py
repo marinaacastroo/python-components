@@ -30,57 +30,78 @@ class SystemPerformanceManager(object):
 	def __init__(self):
 		configUtil = ConfigUtil()
 
-		self.pollRate = configUtil.getInteger( 
+		# Retrieve the integer property
+		self.pollRate = configUtil.getInteger(
 				section = ConfigConst.CONSTRAINED_DEVICE, 
 				key = ConfigConst.POLL_CYCLES_KEY, 
-				defaultVal = ConfigConst.DEFAULT_POLL_CYCLES)
+				defaultVal = ConfigConst.DEFAULT_POLL_CYCLES
+				)
 
+		# Retrieve the string property
 		self.locationID = configUtil.getProperty(
 				section = ConfigConst.CONSTRAINED_DEVICE, 
 				key = ConfigConst.DEVICE_LOCATION_ID_KEY, 
-				defaultVal = ConfigConst.NOT_SET)
+				defaultVal = ConfigConst.NOT_SET
+				)
 
 		if self.pollRate <= 0:
 			self.pollRate = ConfigConst.DEFAULT_POLL_CYCLES
 
-		self.dataMsgListener = None
+		self.dataMsgListener = None # NOT YET IMPLEMENTED
 
-		self.scheduler=BackgroundScheduler()
-		self.scheduler.add_job( 
-			self.handleTelemetry,
-			'interval',
-			seconds=self.pollRate, 
-			max_instances=2,	
-			coalesce=True,
-			misfire_grace_time=15
+		self.scheduler = BackgroundScheduler()
+		self.scheduler.add_job(
+			self.handleTelemetry, 
+			'interval', 
+			seconds = self.pollRate
+			# max_instances = 2,
+			# coalesce = True,
+			# misfire_grace_time = 15
 			)
 
-		self.cpuUtilTask=SystemCpuUtilTask()
-		self.memUtilTask=SystemMemUtilTask()
+		self.cpuUtilTask = SystemCpuUtilTask()
+		self.memUtilTask = SystemMemUtilTask()
 
-		
+
 	def handleTelemetry(self):
-		cpuUtilPct=self.cpuUtilTask.getTelemetryValue()
-		memUtilPct=self.memUtilTask.getTelemetryValue()
+		cpuUtilPct = self.cpuUtilTask.getTelemetryValue()
+		memUtilPct = self.memUtilTask.getTelemetryValue()
 
-		logging.debug('CPU utilization is %s percent, and memory utilization is %s percent.',str(cpuUtilPct),str(memUtilPct))
-				
+		logging.debug("CPU utilization is %s percent, and memory utilization is %s percent.", str(cpuUtilPct), str(memUtilPct))
+		
+		sysPerfData = SystemPerformanceData()
+		sysPerfData.setLocationID(self.locationID)
+		sysPerfData.setCpuUtilization(cpuUtilPct)
+		sysPerfData.setMemoryUtilization(memUtilPct)
+
+		if self.dataMsgListener:
+			self.dataMsgListener.handleSystemPerformanceMessage(data=sysPerfData)
+		
 	def setDataMessageListener(self, listener: IDataMessageListener) -> bool:
-		pass
+		if listener:
+			self.dataMsgListener=listener
 	
 	def startManager(self):
+		'''
+		Log an info message indicating manager was started
+		'''
 		logging.info("Started SystemPerformanceManager.")
-		
+
 		if not self.scheduler.running:
 			self.scheduler.start()
 			logging.info("Started SystemPerformanceManager.")
+
 		else:
-			logging.warning("SystemPerformanceManager scheduler already started. Ignoring.")
+			logging.warning("SystemPerformanceManager already started. Ignoring.")
 
 	def stopManager(self):
+		'''
+		Log an info message indicating manager was stopped
+		'''
 		logging.info("Stopped SystemPerformanceManager.")
+
 		try:
 			self.scheduler.shutdown()
 			logging.info("Stopped SystemPerformanceManager.")
 		except:
-			logging.warning("SystemPerformanceManager scheduler already stopped. Ignoring.")
+			logging.warning("SystemPerformanceManager already stopped. Ignoring.")
