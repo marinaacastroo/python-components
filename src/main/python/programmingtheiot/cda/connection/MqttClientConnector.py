@@ -140,54 +140,54 @@ class MqttClientConnector(IPubSubClient):
 		"""
 		pass
 	
-	def publishMessage(self, resource: ResourceNameEnum = None, msg: str = None, qos: int = ConfigConst.DEFAULT_QOS):
-		logging.info(f"publishMessage() called for resource: {resource}, msg: {msg}")
-
-		if not resource or not msg:
-			logging.warning("Missing resource or message. Aborting publish.")
+	def publishMessage(self, resource: ResourceNameEnum = None, msg: str = None, qos: int = ConfigConst.DEFAULT_QOS) -> bool:
+		# check validity of resource (topic)
+		if not resource:
+			logging.warning('No topic specified. Cannot publish message.')
 			return False
 
-		topic = resource.value
-		result = self.mqttClient.publish(topic, msg, qos=qos)
-
-		if result.rc == mqttClient.MQTT_ERR_SUCCESS:
-			logging.info(f"Successfully published message to topic: {topic}")
-			return True
-		else:
-			logging.warning(f"Failed to publish message to topic: {topic}, result code: {result.rc}")
+		# check validity of message
+		if not msg:
+			logging.warning('No message specified. Cannot publish message to topic: ' + resource.value)
 			return False
+
+		# check validity of QoS - set to default if necessary
+		if qos < 0 or qos > 2:
+			qos = ConfigConst.DEFAULT_QOS
+
+		# publish message, and wait for publish to complete before returning
+		msgInfo = self.mqttClient.publish(topic = resource.value, payload = msg, qos = qos)
+		msgInfo.wait_for_publish()
+
+		return True
 
 	
-	def subscribeToTopic(self, resource: ResourceNameEnum = None, callback = None, qos: int = ConfigConst.DEFAULT_QOS):
-		logging.info(f"subscribeToTopic() called for resource: {resource}")
-
+	def subscribeToTopic(self, resource: ResourceNameEnum = None, callback = None, qos: int = ConfigConst.DEFAULT_QOS) -> bool:
+		# check validity of resource (topic)
 		if not resource:
-			logging.warning("Missing resource. Aborting subscribe.")
+			logging.warning('No topic specified. Cannot subscribe.')
 			return False
 
-		topic = resource.value
-		result, mid = self.mqttClient.subscribe(topic, qos)
+		# check validity of QoS - set to default if necessary
+		if qos < 0 or qos > 2:
+			qos = ConfigConst.DEFAULT_QOS
 
-		if callback:
-			self.mqttClient.message_callback_add(topic, callback)
+		# subscribe to topic
+		logging.info('Subscribing to topic %s', resource.value)
+		self.mqttClient.subscribe(resource.value, qos)
 
-		logging.info(f"Subscription request for topic {topic} returned result: {result}, mid: {mid}")
-		return result == mqttClient.MQTT_ERR_SUCCESS
-
+		return True
 	
 	def unsubscribeFromTopic(self, resource: ResourceNameEnum = None):
-		logging.info(f"unsubscribeFromTopic() called for resource: {resource}")
-
+		# check validity of resource (topic)
 		if not resource:
-			logging.warning("Missing resource. Aborting unsubscribe.")
+			logging.warning('No topic specified. Cannot unsubscribe.')
 			return False
 
-		topic = resource.value
-		result, mid = self.mqttClient.unsubscribe(topic)
+		logging.info('Unsubscribing to topic %s', resource.value)
+		self.mqttClient.unsubscribe(resource.value)
 
-		logging.info(f"Unsubscription request for topic {topic} returned result: {result}, mid: {mid}")
-		return result == mqttClient.MQTT_ERR_SUCCESS
-
+		return True
 
 	def setDataMessageListener(self, listener: IDataMessageListener = None):
 		if listener:
