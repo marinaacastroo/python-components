@@ -8,28 +8,42 @@
 # 
 
 import logging
-
 import programmingtheiot.common.ConfigConst as ConfigConst
-
 from programmingtheiot.common.ConfigUtil import ConfigUtil
 from programmingtheiot.common.ITelemetryDataListener import ITelemetryDataListener
-
 from programmingtheiot.data.DataUtil import DataUtil
 from programmingtheiot.data.SensorData import SensorData
 
-class GetTelemetryResourceHandler(ITelemetryDataListener):
-	"""
-	Observable resource that will collect telemetry based on the given
-	name from the data message listener implementation.
-	
-	NOTE: Your implementation will likely need to extend from the selected
-	CoAP library's observable resource base class.
-	
-	"""
+import aiocoap
+from aiocoap import Code
+from aiocoap.resource import ObservableResource
 
+class GetTelemetryResourceHandler(ObservableResource, ITelemetryDataListener):
 	def __init__(self):
-		pass
-		
+		super().__init__()
+
+		self.pollCycles = \
+			ConfigUtil().getInteger( \
+				section = ConfigConst.CONSTRAINED_DEVICE, \
+				key = ConfigConst.POLL_CYCLES_KEY, \
+				defaultVal = ConfigConst.DEFAULT_POLL_CYCLES)
+
+		self.dataUtil = DataUtil()
+		self.sensorData = None
+
+		# for testing
+		self.payload = "GetSensorData"
+
+	async def render_get(self, request):
+		responseCode = Code.CONTENT # TODO: change to appropriate value
+
+		if not self.sensorData:
+			self.sensorData = SensorData()
+
+		jsonData = self.dataUtil.sensorDataToJson(self.sensorData)
+
+		return aiocoap.Message(code = responseCode, payload = jsonData.encode('ascii'))
+	
 	def onSensorDataUpdate(self, data: SensorData = None) -> bool:
 		pass
 	

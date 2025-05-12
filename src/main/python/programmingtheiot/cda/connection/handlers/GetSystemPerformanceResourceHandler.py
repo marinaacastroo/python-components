@@ -8,28 +8,43 @@
 # 
 
 import logging
-
 import programmingtheiot.common.ConfigConst as ConfigConst
-
 from programmingtheiot.common.ConfigUtil import ConfigUtil
-from programmingtheiot.common.ITelemetryDataListener import ITelemetryDataListener
-
+from programmingtheiot.common.IDataMessageListener import IDataMessageListener
+from programmingtheiot.common.ISystemPerformanceDataListener import ISystemPerformanceDataListener
 from programmingtheiot.data.DataUtil import DataUtil
 from programmingtheiot.data.SystemPerformanceData import SystemPerformanceData
 
-class GetSystemPerformanceResourceHandler(ITelemetryDataListener):
-	"""
-	Observable resource that will collect system performance data based on the
-	given name from the data message listener implementation.
-	
-	NOTE: Your implementation will likely need to extend from the selected
-	CoAP library's observable resource base class.
-	
-	"""
+import aiocoap
+from aiocoap import Code
+from aiocoap.resource import ObservableResource
 
+class GetSystemPerformanceResourceHandler(ObservableResource, ISystemPerformanceDataListener):
 	def __init__(self):
-		pass
-		
+		super().__init__()
+
+		self.pollCycles = \
+			ConfigUtil().getInteger( \
+				section = ConfigConst.CONSTRAINED_DEVICE, \
+				key = ConfigConst.POLL_CYCLES_KEY, \
+				defaultVal = ConfigConst.DEFAULT_POLL_CYCLES)
+
+		self.dataUtil = DataUtil()
+		self.sysPerfData = None
+
+		# for testing
+		self.payload = "GetSysPerfData"
+	
+	async def render_get(self, request):
+		responseCode = Code.CONTENT # TODO: change to appropriate value
+
+		if not self.sysPerfData:
+			self.sysPerfData = SystemPerformanceData()
+
+		jsonData = self.dataUtil.systemPerformanceDataToJson(self.sysPerfData)
+
+		return aiocoap.Message(code = responseCode, payload = jsonData.encode('ascii'))
+	
 	def onSystemPerformanceDataUpdate(self, data: SystemPerformanceData) -> bool:
 		pass
 	
