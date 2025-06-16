@@ -6,10 +6,10 @@
 # implementation for the Programming the Internet of Things exercises,
 # and designed to be modified by the student as needed.
 #
-import logging
 
+import logging
 import programmingtheiot.common.ConfigConst as ConfigConst
-from programmingtheiot.common.ConfigUtil import ConfigUtil
+
 from programmingtheiot.cda.connection.CoapClientConnector import CoapClientConnector
 from programmingtheiot.cda.connection.MqttClientConnector import MqttClientConnector
 
@@ -17,6 +17,7 @@ from programmingtheiot.cda.system.ActuatorAdapterManager import ActuatorAdapterM
 from programmingtheiot.cda.system.SensorAdapterManager import SensorAdapterManager
 from programmingtheiot.cda.system.SystemPerformanceManager import SystemPerformanceManager
 
+from programmingtheiot.common.ConfigUtil import ConfigUtil
 from programmingtheiot.common.IDataMessageListener import IDataMessageListener
 from programmingtheiot.common.ISystemPerformanceDataListener import ISystemPerformanceDataListener
 from programmingtheiot.common.ITelemetryDataListener import ITelemetryDataListener
@@ -52,15 +53,19 @@ class DeviceDataManager(IDataMessageListener):
 		self.actuatorAdapterMgr = None
 
 		# NOTE: The following aren't used until Part III but should be declared now
-		self.enableMqttClient = self.configUtil.getBoolean( section = ConfigConst.CONSTRAINED_DEVICE, key = ConfigConst.ENABLE_MQTT_CLIENT_KEY)
+		self.mqttClient         = None
+		self.coapClient         = None
+		self.coapServer         = None
+
+		self.enableMqttClient = \
+			self.configUtil.getBoolean( \
+				section=ConfigConst.CONSTRAINED_DEVICE, key=ConfigConst.ENABLE_MQTT_CLIENT_KEY)
 
 		self.mqttClient = None
+
 		if self.enableMqttClient:
 			self.mqttClient = MqttClientConnector()
 			self.mqttClient.setDataMessageListener(self)
-		
-		self.coapClient         = None
-		self.coapServer         = None
 
 		if self.enableSystemPerf:
 			self.sysPerfMgr = SystemPerformanceManager()
@@ -87,7 +92,7 @@ class DeviceDataManager(IDataMessageListener):
 		self.triggerHvacTempCeiling   = \
 			self.configUtil.getFloat( \
 				ConfigConst.CONSTRAINED_DEVICE, ConfigConst.TRIGGER_HVAC_TEMP_CEILING_KEY);
-
+		
 	def getLatestActuatorDataResponseFromCache(self, name: str = None) -> ActuatorData:
 		"""
 		Retrieves the named actuator data (response) item from the internal data cache.
@@ -115,8 +120,7 @@ class DeviceDataManager(IDataMessageListener):
 		"""
 		pass
 	
-	
-	def handleActuatorCommandMessage(self, data: ActuatorData = None) -> ActuatorData:
+	def handleActuatorCommandMessage(self, data: ActuatorData) -> ActuatorData:
 		"""
 		This callback method will be invoked by the connection that's handling
 		an incoming ActuatorData command message.
@@ -133,7 +137,7 @@ class DeviceDataManager(IDataMessageListener):
 			logging.warning("Incoming actuator command is invalid (null). Ignoring.")
 			return None
 	
-	def handleActuatorCommandResponse(self, data: ActuatorData) -> bool:		
+	def handleActuatorCommandResponse(self, data: ActuatorData) -> bool:
 		"""
 		This callback method will be invoked by the actuator manager that just
 		processed an ActuatorData command, which creates a new ActuatorData
@@ -160,7 +164,6 @@ class DeviceDataManager(IDataMessageListener):
 			logging.warning("Incoming actuator response is invalid (null). Ignoring.")
 
 			return False
-
 	
 	def handleIncomingMessage(self, resourceEnum: ResourceNameEnum, msg: str) -> bool:
 		"""
@@ -171,7 +174,7 @@ class DeviceDataManager(IDataMessageListener):
 		@param data The incoming JSON message.
 		@return boolean
 		"""
-		logging.warning("handleIncomingMessage method has been called.")
+		pass
 	
 	def handleSensorMessage(self, data: SensorData) -> bool:
 		"""
@@ -189,7 +192,7 @@ class DeviceDataManager(IDataMessageListener):
 		else:
 			logging.warning("Incoming sensor data is invalid (null). Ignoring.")
 			return False
-		
+	
 	def handleSystemPerformanceMessage(self, data: SystemPerformanceData) -> bool:
 		"""
 		This callback method will be invoked by the system performance manager that just
@@ -206,7 +209,6 @@ class DeviceDataManager(IDataMessageListener):
 			logging.warning("Incoming system performance data is invalid (null). Ignoring.")
 			return False
 		
-	
 	def setSystemPerformanceDataListener(self, listener: ISystemPerformanceDataListener = None):
 		pass
 			
@@ -221,9 +223,11 @@ class DeviceDataManager(IDataMessageListener):
 
 		if self.sensorAdapterMgr:
 			self.sensorAdapterMgr.startManager()
+
 		if self.mqttClient:
 			self.mqttClient.connectClient()
-			self.mqttClient.subscribeToTopic(ResourceNameEnum.CDA_ACTUATOR_CMD_RESOURCE, callback = None, qos = ConfigConst.DEFAULT_QOS)
+			self.mqttClient.subscribeToTopic(ResourceNameEnum.CDA_ACTUATOR_CMD_RESOURCE, callback=None, qos=ConfigConst.DEFAULT_QOS)
+
 
 		logging.info("Started DeviceDataManager.")
 		
@@ -235,13 +239,13 @@ class DeviceDataManager(IDataMessageListener):
 
 		if self.sensorAdapterMgr:
 			self.sensorAdapterMgr.stopManager()
-		
+
 		if self.mqttClient:
 			self.mqttClient.unsubscribeFromTopic(ResourceNameEnum.CDA_ACTUATOR_CMD_RESOURCE)
 			self.mqttClient.disconnectClient()
 
 		logging.info("Stopped DeviceDataManager.")
-			
+		
 	def _handleIncomingDataAnalysis(self, msg: str):
 		"""
 		Call this from handleIncomeMessage() to determine if there's
@@ -252,7 +256,6 @@ class DeviceDataManager(IDataMessageListener):
 		"""
 		pass
 		
-	
 	def _handleSensorDataAnalysis(self, resource = None, data: SensorData = None):
 		"""
 		Call this from handleSensorMessage() to determine if there's
@@ -281,7 +284,7 @@ class DeviceDataManager(IDataMessageListener):
 			# left to ActuatorAdapterManager and its associated actuator
 			# task implementations, and not this function
 			self.handleActuatorCommandMessage(ad)
-			
+		
 	def _handleUpstreamTransmission(self, resourceName: ResourceNameEnum, msg: str):
 		"""
 		Call this from handleActuatorCommandResponse(), handlesensorMessage(), and handleSystemPerformanceMessage()
