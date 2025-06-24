@@ -83,17 +83,75 @@ class CoapClientConnector(IRequestResponseClient):
         return resourcePath
 
     def sendDiscoveryRequest(self, timeout: int = IRequestResponseClient.DEFAULT_TIMEOUT) -> bool:
-        logging.info("sendDiscoveryRequest called")
-        return False
+        logging.info("Discovering remote resources...")
+
+        return self.sendGetRequest(
+            resource=None,
+            name='.well-known/core',
+            enableCON=False,
+            timeout=timeout
+        )
 
     def sendDeleteRequest(self, resource: ResourceNameEnum = None, name: str = None, enableCON: bool = False, timeout: int = IRequestResponseClient.DEFAULT_TIMEOUT) -> bool:
         logging.info("sendDeleteRequest called")
         return False
 
-    def sendGetRequest(self, resource: ResourceNameEnum = None, name: str = None, enableCON: bool = False, timeout: int = IRequestResponseClient.DEFAULT_TIMEOUT) -> bool:
-        logging.info("sendGetRequest called")
-        return False
+    def sendGetRequest(
+        self,
+        resource: ResourceNameEnum = None,
+        name: str = None,
+        enableCON: bool = False,
+        timeout: int = IRequestResponseClient.DEFAULT_TIMEOUT
+    ) -> bool:
+        if resource or name:
+            resourcePath = self._createResourcePath(resource, name)
 
+            logging.info("Issuing GET with path: " + resourcePath)
+
+            request = self.coapClient.mk_request(defines.Codes.GET, path=resourcePath)
+            request.token = generate_random_token(2)
+
+            if not enableCON:
+                request.type = defines.Types["NON"]
+
+            response = self.coapClient.send_request(request=request, timeout=timeout)
+
+            self._onGetResponse(response=response, resourcePath=resourcePath)
+            return True
+        else:
+            logging.warning("Can't test GET - no path or path list provided.")
+            return False
+
+    def _onGetResponse(self, response, resourcePath: str = None):
+        if not response:
+            logging.warning('GET response invalid. Ignoring.')
+            return
+
+        logging.info('GET response received.')
+
+        jsonData = response.payload
+        locationPath = resourcePath.split('/') if resourcePath else []
+
+        if len(locationPath) > 2:
+            dataType = locationPath[2]
+
+            if dataType == ConfigConst.ACTUATOR_CMD:
+                # TODO: convert payload to ActuatorData and verify!
+                logging.info("ActuatorData received: %s", jsonData)
+
+                try:
+                    from programmingtheiot.data.DataUtil import DataUtil
+                    ad = DataUtil().jsonToActuatorData(jsonData)
+
+                    if self.dataMsgListener:
+                        self.dataMsgListener.handleActuatorCommandMessage(ad)
+                except:
+                    logging.warning("Failed to decode actuator data. Ignoring: %s", jsonData)
+                    return
+            else:
+                logging.info("Response data received. Payload: %s", jsonData)
+        else:
+            logging.info("Response data received. Payload: %s", jsonData)
     def sendPostRequest(self, resource: ResourceNameEnum = None, name: str = None, enableCON: bool = False, payload: str = None, timeout: int = IRequestResponseClient.DEFAULT_TIMEOUT) -> bool:
         logging.info("sendPostRequest called")
         return False
