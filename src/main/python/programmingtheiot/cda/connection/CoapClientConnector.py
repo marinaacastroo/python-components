@@ -156,9 +156,42 @@ class CoapClientConnector(IRequestResponseClient):
         logging.info("sendPostRequest called")
         return False
 
-    def sendPutRequest(self, resource: ResourceNameEnum = None, name: str = None, enableCON: bool = False, payload: str = None, timeout: int = IRequestResponseClient.DEFAULT_TIMEOUT) -> bool:
-        logging.info("sendPutRequest called")
-        return False
+    def sendPutRequest(
+        self,
+        resource: ResourceNameEnum = None,
+        name: str = None,
+        enableCON: bool = False,
+        payload: str = None,
+        timeout: int = IRequestResponseClient.DEFAULT_TIMEOUT
+    ) -> bool:
+        if resource or name:
+            resourcePath = self._createResourcePath(resource, name)
+
+            logging.info("Issuing PUT with path: " + resourcePath)
+
+            request = self.coapClient.mk_request(defines.Codes.PUT, path=resourcePath)
+            request.token = generate_random_token(2)
+            request.payload = payload
+
+            if not enableCON:
+                request.type = defines.Types["NON"]
+
+            self.coapClient.send_request(
+                request=request,
+                callback=self._onPutResponse,
+                timeout=timeout
+            )
+            return True
+        else:
+            logging.warning("Can't test PUT - no path or path list provided.")
+            return False
+
+    def _onPutResponse(self, response):
+        if not response:
+            logging.warning('PUT response invalid. Ignoring.')
+            return
+
+        logging.info('PUT response received: %s', response.payload)
 
     def startObserver(self, resource: ResourceNameEnum = None, name: str = None, ttl: int = IRequestResponseClient.DEFAULT_TTL) -> bool:
         logging.info("startObserver called")
