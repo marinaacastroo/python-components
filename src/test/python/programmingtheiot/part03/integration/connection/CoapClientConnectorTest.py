@@ -99,33 +99,27 @@ class CoapClientConnectorTest(unittest.TestCase):
 		self.coapClient.sendDeleteRequest( \
 			resource = ResourceNameEnum.CDA_SENSOR_MSG_RESOURCE, enableCON = False, timeout = 5)
 
-	# @unittest.skip("Ignore for now.")
+	@unittest.skip("Ignore for now.")
 	def testPostSensorMessageCon(self):
 		"""
 		Comment the annotation to test CON POST
 		"""
 		data = SensorData()
-		jsonData = DataUtil().sensorDataToJson(data=data)
-		self.coapClient.sendPostRequest(
-			resource=ResourceNameEnum.CDA_SENSOR_MSG_RESOURCE,
-			enableCON=True,
-			payload=jsonData,
-			timeout=10
-		)
+		jsonData = DataUtil().sensorDataToJson(data = data)
+		
+		self.coapClient.sendPostRequest( \
+			resource = ResourceNameEnum.CDA_SENSOR_MSG_RESOURCE, enableCON = True, payload = jsonData, timeout = 5)
 	
-	# @unittest.skip("Ignore for now.")
+	@unittest.skip("Ignore for now.")
 	def testPostSensorMessageNon(self):
 		"""
 		Comment the annotation to test NON POST
 		"""
 		data = SensorData()
-		jsonData = DataUtil().sensorDataToJson(data=data)
-		self.coapClient.sendPostRequest(
-			resource=ResourceNameEnum.CDA_SENSOR_MSG_RESOURCE,
-			enableCON=False,
-			payload=jsonData,
-			timeout=10
-		)
+		jsonData = DataUtil().sensorDataToJson(data = data)
+		
+		self.coapClient.sendPostRequest( \
+			resource = ResourceNameEnum.CDA_SENSOR_MSG_RESOURCE, enableCON = False, payload = jsonData, timeout = 5)
 	
 	@unittest.skip("Ignore for now.")
 	def testPutSensorMessageCon(self):
@@ -149,7 +143,7 @@ class CoapClientConnectorTest(unittest.TestCase):
 		self.coapClient.sendPutRequest( \
 			resource = ResourceNameEnum.CDA_SENSOR_MSG_RESOURCE, enableCON = False, payload = jsonData, timeout = 5)
 
-	@unittest.skip("Ignore for now.")
+	#@unittest.skip("Ignore for now.")
 	def testActuatorCommandObserve(self):
 		"""
 		Comment the annotation to test Observe
@@ -166,3 +160,4 @@ class CoapClientConnectorTest(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+	
