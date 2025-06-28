@@ -118,7 +118,7 @@ class MqttClientConnector(IPubSubClient):
 			logging.info('MQTT message received with no payload: ' + str(msg))
 
 	def onPublish(self, client, userdata, mid):
-		logging.info('MQTT message published: ' + str(client))
+		pass
 
 	def onSubscribe(self, client, userdata, mid, granted_qos):
 		logging.info('MQTT client subscribed: ' + str(client))
@@ -141,12 +141,12 @@ class MqttClientConnector(IPubSubClient):
 	def publishMessage(self, resource: ResourceNameEnum = None, msg: str = None, qos: int = ConfigConst.DEFAULT_QOS) -> bool:
 		# check validity of resource (topic)
 		if not resource:
-			logging.warning('No topic specified. Cannot publish message.')
+			# logging.warning('No topic specified. Cannot publish message.')  # Disabled for performance test
 			return False
 
 		# check validity of message
 		if not msg:
-			logging.warning('No message specified. Cannot publish message to topic: ' + resource.value)
+			# logging.warning('No message specified. Cannot publish message to topic: ' + resource.value)  # Disabled for performance test
 			return False
 
 		# check validity of QoS - set to default if necessary
