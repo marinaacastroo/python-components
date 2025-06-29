@@ -201,7 +201,7 @@ class CoapClientConnector(IRequestResponseClient):
         if resource or name:
             resourcePath = self._createResourcePath(resource, name)
 
-            logging.info("Issuing Async POST to path: " + resourcePath)
+            # logging.info("Issuing Async POST to path: " + resourcePath)
 
             asyncio.get_event_loop().run_until_complete(
                 self._handlePostRequest(
@@ -210,7 +210,7 @@ class CoapClientConnector(IRequestResponseClient):
             )
             return True
         else:
-            logging.warning("Can't issue Async POST - no path or path list provided.")
+            # logging.warning("Can't issue Async POST - no path or path list provided.")
             return False
 
     async def _handlePostRequest(
@@ -237,15 +237,15 @@ class CoapClientConnector(IRequestResponseClient):
             self._onPostResponse(responseData)
 
         except Exception as e:
-            logging.warning("Failed to process POST request for path: " + resourcePath)
+            # logging.warning("Failed to process POST request for path: " + resourcePath)
             traceback.print_exception(type(e), e, e.__traceback__)
 
     def _onPostResponse(self, response):
         if not response:
-            logging.warning("POST response invalid. Ignoring.")
+            # logging.warning("POST response invalid. Ignoring.")
             return
 
-        logging.info("POST response received: %s", response.payload)
+        # logging.info("POST response received: %s", response.payload)
 
     def sendPutRequest(
         self,
@@ -258,7 +258,7 @@ class CoapClientConnector(IRequestResponseClient):
         if resource or name:
             resourcePath = self._createResourcePath(resource, name)
 
-            logging.info("Issuing Async PUT to path: " + resourcePath)
+            # logging.info("Issuing Async PUT to path: " + resourcePath)
 
             asyncio.get_event_loop().run_until_complete(
                 self._handlePutRequest(
@@ -267,7 +267,7 @@ class CoapClientConnector(IRequestResponseClient):
             )
             return True
         else:
-            logging.warning("Can't issue Async PUT - no path or path list provided.")
+            # logging.warning("Can't issue Async PUT - no path or path list provided.")
             return False
 
     async def _handlePutRequest(
@@ -294,15 +294,15 @@ class CoapClientConnector(IRequestResponseClient):
             self._onPutResponse(responseData)
 
         except Exception as e:
-            logging.warning("Failed to process PUT request for path: " + resourcePath)
+            # logging.warning("Failed to process PUT request for path: " + resourcePath)
             traceback.print_exception(type(e), e, e.__traceback__)
 
     def _onPutResponse(self, response):
         if not response:
-            logging.warning("PUT response invalid. Ignoring.")
+            # logging.warning("PUT response invalid. Ignoring.")
             return
 
-        logging.info("PUT response received: %s", response.payload)
+        # logging.info("PUT response received: %s", response.payload)
 
     def setDataMessageListener(self, listener: IDataMessageListener = None) -> bool:
         if listener is not None:

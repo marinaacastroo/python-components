@@ -38,9 +38,9 @@ class CoapClientPerformanceTest(unittest.TestCase):
 	def setUp(self):
 		self.coapClient = CoapClientConnector()
 
-	def tearDown(self):
+	"""def tearDown(self):
 		self.coapClient.disconnectClient()
-					
+			"""		
 	@unittest.skip("Ignore for now.")
 	def testGetRequestCon(self):
 		"""
@@ -59,23 +59,21 @@ class CoapClientPerformanceTest(unittest.TestCase):
 		
 		self._execTestGet(self.MAX_TEST_RUNS, False)
 
-	@unittest.skip("Ignore for now.")
+	# @unittest.skip("Ignore for now.")
 	def testPostRequestCon(self):
 		"""
 		Comment the annotation to perf test CON POST
 		"""
 		print("Testing POST - CON")
-		
-		self._execTestPost(self.MAX_TEST_RUNS, True)
+		self._execTestPost(100, True)
 
-	@unittest.skip("Ignore for now.")
+	# @unittest.skip("Ignore for now.")
 	def testPostRequestNon(self):
 		"""
 		Comment the annotation to perf test NON POST
 		"""
 		print("Testing POST - NON")
-		
-		self._execTestPost(self.MAX_TEST_RUNS, False)
+		self._execTestPost(100, False)
 
 	@unittest.skip("Ignore for now.")
 	def testPutRequestCon(self):
@@ -142,4 +140,3 @@ class CoapClientPerformanceTest(unittest.TestCase):
 	
 if __name__ == "__main__":
 	unittest.main()
-	
