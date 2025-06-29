@@ -74,25 +74,17 @@ class MqttClientConnectorTest(unittest.TestCase):
 		
 		self.mcc.disconnectClient()
 
-	@unittest.skip("Ignore for now.")
 	def testNewActuatorCmdPubSub(self):
 		qos = 1
-	
 		# NOTE: delay can be anything you'd like - the sleep() calls are simply to slow things down a bit for observation
 		delay = self.cfg.getInteger(ConfigConst.MQTT_GATEWAY_SERVICE, ConfigConst.KEEP_ALIVE_KEY, ConfigConst.DEFAULT_KEEP_ALIVE)
-		
 		actuatorData = ActuatorData()
 		payload = DataUtil().actuatorDataToJson(actuatorData)
-		
 		self.mcc.setDataMessageListener(DefaultDataMessageListener())
 		self.mcc.connectClient()
-		
 		sleep(5)
-		
 		self.mcc.publishMessage(resource = ResourceNameEnum.CDA_ACTUATOR_CMD_RESOURCE, msg = payload, qos = qos)
-		
 		sleep(delay)
-		
 		self.mcc.disconnectClient()
 		
 	@unittest.skip("Ignore for now.")
@@ -181,4 +173,3 @@ class MqttClientConnectorTest(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
-	

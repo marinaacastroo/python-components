@@ -9,6 +9,7 @@
 
 import logging
 import ssl
+from programmingtheiot.data.DataUtil import DataUtil
 
 import paho.mqtt.client as mqttClient
 
@@ -59,6 +60,8 @@ class MqttClientConnector(IPubSubClient):
             self.clientID = \
                 self.config.getProperty(
                     ConfigConst.CONSTRAINED_DEVICE, ConfigConst.DEVICE_LOCATION_ID_KEY)
+            if not self.clientID:
+                self.clientID = "DefaultClientID"
         else:
             self.clientID = clientID
 
@@ -108,8 +111,26 @@ class MqttClientConnector(IPubSubClient):
 
             return True  # <-- Cambia esto a True
 
+    def setDataMessageListener(self, listener: IDataMessageListener = None):
+        if listener:
+            self.dataMsgListener = listener
+
+    def onActuatorCommandMessage(self, client, userdata, msg):
+        logging.info('[Callback] Actuator command message received. Topic: %s.', msg.topic)
+        if self.dataMsgListener:
+            try:
+                actuatorData = DataUtil().jsonToActuatorData(msg.payload.decode('utf-8'))
+                self.dataMsgListener.handleActuatorCommandMessage(actuatorData)
+            except Exception:
+                logging.exception("Failed to convert incoming actuation command payload to ActuatorData: ")
+
     def onConnect(self, client, userdata, flags, rc):
-        logging.info('MQTT client connected to broker: ' + str(client))
+        logging.info('[Callback] Connected to MQTT broker. Result code: ' + str(rc))
+        self.mqttClient.subscribe(
+            topic=ResourceNameEnum.CDA_ACTUATOR_CMD_RESOURCE.value, qos=self.defaultQos)
+        self.mqttClient.message_callback_add(
+            sub=ResourceNameEnum.CDA_ACTUATOR_CMD_RESOURCE.value,
+            callback=self.onActuatorCommandMessage)
 
     def onDisconnect(self, client, userdata, rc):
         logging.info('MQTT client disconnected from broker: ' + str(client))
@@ -128,9 +149,6 @@ class MqttClientConnector(IPubSubClient):
     def onSubscribe(self, client, userdata, mid, granted_qos):
         logging.info('MQTT client subscribed: ' + str(client))
 
-    def onActuatorCommandMessage(self, client, userdata, msg):
-        pass
-
     def publishMessage(self, resource: ResourceNameEnum = None, msg: str = None, qos: int = ConfigConst.DEFAULT_QOS) -> bool:
         # if not resource:
         #     logging.warning('No topic specified. Cannot publish message.')  # Disabled for performance test
@@ -144,7 +162,7 @@ class MqttClientConnector(IPubSubClient):
             qos = ConfigConst.DEFAULT_QOS
 
         msgInfo = self.mqttClient.publish(topic=resource.value, payload=msg, qos=qos)
-        msgInfo.wait_for_publish()  # Wait for publish to complete for performance test
+        # msgInfo.wait_for_publish()  # Commented out to avoid deadlock
 
         return True
 
@@ -170,7 +188,3 @@ class MqttClientConnector(IPubSubClient):
         self.mqttClient.unsubscribe(resource.value)
 
         return True
-
-    def setDataMessageListener(self, listener: IDataMessageListener = None):
-        if listener:
-            self.dataMsgListener = listener
