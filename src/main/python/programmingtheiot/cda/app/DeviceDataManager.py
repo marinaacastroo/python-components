@@ -188,8 +188,10 @@ class DeviceDataManager(IDataMessageListener):
 		@return boolean
 		"""
 		if data:
-			logging.debug("Incoming sensor data received (from sensor manager): " + str(data))
+			logging.info("Incoming sensor data received (from sensor manager): " + str(data))
 			self._handleSensorDataAnalysis(data)
+			jsonData = DataUtil().sensorDataToJson(data=data)
+			self._handleUpstreamTransmission(resourceName=ResourceNameEnum.CDA_SENSOR_MSG_RESOURCE, msg=jsonData)
 			return True
 		else:
 			logging.warning("Incoming sensor data is invalid (null). Ignoring.")
@@ -205,7 +207,9 @@ class DeviceDataManager(IDataMessageListener):
 		@return boolean
 		"""
 		if data:
-			logging.debug("Incoming system performance message received (from sys perf manager): " + str(data))
+			logging.info("Incoming system performance message received (from sys perf manager): " + str(data))
+			jsonData = DataUtil().systemPerformanceDataToJson(data=data)
+			self._handleUpstreamTransmission(resourceName=ResourceNameEnum.CDA_SYSTEM_PERF_MSG_RESOURCE, msg=jsonData)
 			return True
 		else:
 			logging.warning("Incoming system performance data is invalid (null). Ignoring.")
@@ -289,9 +293,12 @@ class DeviceDataManager(IDataMessageListener):
 		
 	def _handleUpstreamTransmission(self, resourceName: ResourceNameEnum, msg: str):
 		"""
-		Call this from handleActuatorCommandResponse(), handlesensorMessage(), and handleSystemPerformanceMessage()
-		to determine if the message should be sent upstream. Steps to take:
-		1) Check connection: Is there a client connection configured (and valid) to a remote MQTT or CoAP server?
-		2) Act on msg: If # 1 is true, send message upstream using one (or both) client connections.
+		Send data upstream to the GDA using MQTT (or CoAP if desired).
 		"""
-		pass
+		logging.info("Upstream transmission invoked. Checking comm's integration.")
+		if self.mqttClient:
+			if self.mqttClient.publishMessage(resource=resourceName, msg=msg):
+				logging.debug(f"Published incoming data to resource (MQTT): {resourceName}")
+			else:
+				logging.warning(f"Failed to publish incoming data to resource (MQTT): {resourceName}")
+		# If you want to support CoAP as well, you can add similar logic here.
