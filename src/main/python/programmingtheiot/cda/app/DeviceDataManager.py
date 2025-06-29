@@ -122,19 +122,21 @@ class DeviceDataManager(IDataMessageListener):
 	
 	def handleActuatorCommandMessage(self, data: ActuatorData) -> ActuatorData:
 		"""
-		This callback method will be invoked by the connection that's handling
-		an incoming ActuatorData command message.
-		
-		@param data The incoming ActuatorData command message.
-		@return boolean
+		Handles an incoming ActuatorData command message.
+		Logs, validates, and sends the command to the actuator adapter manager.
+		@param data: ActuatorData
+		@return: ActuatorData (response)
 		"""
-		logging.info("Actuator data: " + str(data))
-
-		if data:
-			logging.info("Processing actuator command message.")
-			return self.actuatorAdapterMgr.sendActuatorCommand(data)
+		if data is None or not isinstance(data, ActuatorData):
+			logging.warning("Invalid ActuatorData received in handleActuatorCommandMessage.")
+			return None
+		logging.info(f"Received ActuatorData command: {data}")
+		if self.actuatorAdapterMgr:
+			response = self.actuatorAdapterMgr.sendActuatorCommand(data)
+			logging.info(f"Actuator command processed. Response: {response}")
+			return response
 		else:
-			logging.warning("Incoming actuator command is invalid (null). Ignoring.")
+			logging.warning("ActuatorAdapterManager is not initialized.")
 			return None
 	
 	def handleActuatorCommandResponse(self, data: ActuatorData) -> bool:

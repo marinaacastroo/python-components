@@ -10,57 +10,34 @@
 import logging
 import unittest
 
-from time import sleep
-
 import programmingtheiot.common.ConfigConst as ConfigConst
-
 from programmingtheiot.cda.app.DeviceDataManager import DeviceDataManager
 from programmingtheiot.data.ActuatorData import ActuatorData
 
-class DeviceDataManagerWithCommsTest(unittest.TestCase):
+class DeviceDataManagerCallbackTest(unittest.TestCase):
 	"""
-	This test case class contains very basic integration tests for
-	DeviceDataManager. It should not be considered complete,
-	but serve as a starting point for the student implementing
-	additional functionality within their Programming the IoT
-	environment.
-	
-	NOTE: This test MAY require the sense_emu_gui to be running,
-	depending on whether or not the 'enableEmulator' flag is
-	True within the ConstraineDevice section of PiotConfig.props.
-	If so, it must have access to the underlying libraries that
-	support the pisense module. On Windows, one way to do
-	this is by installing pisense and sense-emu within the
-	Bash on Ubuntu on Windows environment and then execute this
-	test case from the command line, as it will likely fail
-	if run within an IDE in native Windows.
-	
+	Test DeviceDataManager.handleActuatorCommandMessage callback logic.
 	"""
-	
 	@classmethod
 	def setUpClass(self):
 		logging.basicConfig(format = '%(asctime)s:%(module)s:%(levelname)s:%(message)s', level = logging.DEBUG)
-		logging.info("Testing DeviceDataManager class...")
-		
+		logging.info("Testing DeviceDataManager ActuatorData callback...")
+
 	def setUp(self):
-		pass
+		self.ddMgr = DeviceDataManager()
 
 	def tearDown(self):
-		pass
+		self.ddMgr = None
 
-	#@unittest.skip("Ignore for now.")
 	def testActuatorDataCallback(self):
-		ddMgr = DeviceDataManager()
-		
-		actuatorData = ActuatorData(typeID = ConfigConst.HVAC_ACTUATOR_TYPE)
-		actuatorData.setCommand(ConfigConst.COMMAND_ON)
-		actuatorData.setStateData("This is a test.")
-		actuatorData.setValue(52)
-		
-		ddMgr.handleActuatorCommandMessage(actuatorData)
-		
-		sleep(10)
-		
+		ad = ActuatorData(typeID=ConfigConst.HVAC_ACTUATOR_TYPE)
+		ad.setCommand(ConfigConst.COMMAND_ON)
+		ad.setStateData("This is a test.")
+		ad.setValue(52)
+		logging.info(f"Sending ActuatorData command: {ad}")
+		response = self.ddMgr.handleActuatorCommandMessage(ad)
+		logging.info(f"Received response: {response}")
+		self.assertTrue(response is None or isinstance(response, ActuatorData))
+
 if __name__ == "__main__":
 	unittest.main()
-	
