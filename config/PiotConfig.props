@@ -31,7 +31,7 @@ host           = localhost
 port           = 5683
 securePort     = 5684
 enableAuth     = False
-enableCrypt    = False
+enableCrypt    = True
 
 #
 # CDA specific configuration information
